@@ -36,19 +36,19 @@ export function AdminLoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <Input
         id="password"
-        label="Admin Password"
+        label="Password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        placeholder="Enter admin password"
+        placeholder="••••••••"
         error={error}
         autoFocus
       />
       <Button type="submit" disabled={loading || !password} className="w-full">
-        {loading ? 'Signing in...' : 'Sign In'}
+        {loading ? 'Signing in…' : 'Sign In'}
       </Button>
     </form>
   );

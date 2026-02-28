@@ -23,17 +23,17 @@ const initialForm: AppointmentInput = {
 
 function formatDateTime(dt: string) {
   if (!dt) return '';
-  const date = new Date(dt);
-  return date.toLocaleString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
+  return new Date(dt).toLocaleString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long',
+    day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
   });
 }
+
+const steps = [
+  { n: 1, label: 'Patient Info', icon: '👤' },
+  { n: 2, label: 'Date & Time', icon: '📅' },
+  { n: 3, label: 'Confirm', icon: '✓' },
+];
 
 export function BookingForm() {
   const [step, setStep] = useState<Step>(1);
@@ -95,21 +95,20 @@ export function BookingForm() {
 
   if (success) {
     return (
-      <div className="text-center py-12">
-        <div className="text-green-600 text-5xl mb-4">✓</div>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Appointment Booked!</h2>
-        <p className="text-gray-600 mb-1">
-          {form.first_name} {form.last_name} — {formatDateTime(form.appointment_dt)}
+      <div className="text-center py-10">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-5">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">You&apos;re all set!</h2>
+        <p className="text-slate-600 mb-1 font-medium">{form.first_name} {form.last_name}</p>
+        <p className="text-blue-600 font-semibold">{formatDateTime(form.appointment_dt)}</p>
+        <p className="text-slate-400 text-sm mt-4">
+          View your appointment at{' '}
+          <a href="/my-appointments" className="text-blue-600 hover:underline font-medium">My Appointments</a>
         </p>
-        <p className="text-gray-500 text-sm mt-4">
-          You can view your appointments at{' '}
-          <a href="/my-appointments" className="text-blue-600 underline">/my-appointments</a>
-        </p>
-        <Button
-          variant="secondary"
-          className="mt-6"
-          onClick={() => { setForm(initialForm); setStep(1); setSuccess(false); }}
-        >
+        <Button variant="secondary" className="mt-6" onClick={() => { setForm(initialForm); setStep(1); setSuccess(false); }}>
           Book Another Appointment
         </Button>
       </div>
@@ -117,32 +116,44 @@ export function BookingForm() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      {/* Step Indicator */}
-      <div className="flex items-center mb-8">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold
-              ${step >= s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-              {s}
+    <div>
+      {/* Step indicator */}
+      <div className="flex items-center justify-between mb-8 px-2">
+        {steps.map((s, i) => (
+          <div key={s.n} className="flex items-center flex-1">
+            <div className="flex flex-col items-center gap-1.5">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all
+                ${step > s.n ? 'bg-blue-600 border-blue-600 text-white' :
+                  step === s.n ? 'bg-white border-blue-600 text-blue-600' :
+                  'bg-white border-slate-200 text-slate-400'}`}>
+                {step > s.n ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : s.n}
+              </div>
+              <span className={`text-xs font-medium hidden sm:block ${step === s.n ? 'text-blue-600' : 'text-slate-400'}`}>
+                {s.label}
+              </span>
             </div>
-            {s < 3 && (
-              <div className={`h-1 w-16 mx-1 ${step > s ? 'bg-blue-600' : 'bg-gray-200'}`} />
+            {i < steps.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-2 mt-[-12px] rounded ${step > s.n ? 'bg-blue-600' : 'bg-slate-200'}`} />
             )}
           </div>
         ))}
-        <div className="ml-4 text-sm text-gray-500">
-          {step === 1 ? 'Patient Info' : step === 2 ? 'Date & Time' : 'Confirm'}
-        </div>
       </div>
 
-      {/* Step 1: Patient Info */}
+      {/* Step 1 */}
       {step === 1 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Patient Information</h2>
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 mb-0.5">Patient Information</h2>
+            <p className="text-sm text-slate-500">Fields marked with * are required.</p>
+          </div>
+
           <Select
             id="patient_type"
-            label="Patient Type"
+            label="Patient Type *"
             value={form.patient_type}
             onChange={(e) => updateField('patient_type', e.target.value as 'new' | 'existing')}
             options={[
@@ -150,144 +161,126 @@ export function BookingForm() {
               { value: 'existing', label: 'Existing Patient' },
             ]}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              id="first_name"
-              label="First Name *"
-              value={form.first_name}
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="first_name" label="First Name *" value={form.first_name}
               onChange={(e) => updateField('first_name', e.target.value)}
-              error={errors.first_name}
-              placeholder="Jane"
-            />
-            <Input
-              id="last_name"
-              label="Last Name *"
-              value={form.last_name}
+              error={errors.first_name} placeholder="Jane" />
+            <Input id="last_name" label="Last Name *" value={form.last_name}
               onChange={(e) => updateField('last_name', e.target.value)}
-              error={errors.last_name}
-              placeholder="Doe"
-            />
+              error={errors.last_name} placeholder="Doe" />
           </div>
-          <Input
-            id="phone"
-            label="Phone Number *"
-            type="tel"
-            value={form.phone}
+
+          <Input id="phone" label="Phone Number *" type="tel" value={form.phone}
             onChange={(e) => updateField('phone', e.target.value)}
-            error={errors.phone}
-            placeholder="(555) 555-5555"
-          />
-          <Input
-            id="email"
-            label="Email (optional)"
-            type="email"
-            value={form.email || ''}
+            error={errors.phone} placeholder="(555) 555-5555" />
+
+          <Input id="email" label="Email Address" type="email" value={form.email || ''}
             onChange={(e) => updateField('email', e.target.value)}
-            placeholder="jane@example.com"
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              id="insurance_provider"
-              label="Insurance Provider"
-              value={form.insurance_provider || ''}
+            placeholder="jane@example.com" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="insurance_provider" label="Insurance Provider" value={form.insurance_provider || ''}
               onChange={(e) => updateField('insurance_provider', e.target.value)}
-              placeholder="e.g. BlueCross"
-            />
-            <Input
-              id="insurance_id"
-              label="Insurance ID"
-              value={form.insurance_id || ''}
+              placeholder="e.g. BlueCross" />
+            <Input id="insurance_id" label="Insurance ID" value={form.insurance_id || ''}
               onChange={(e) => updateField('insurance_id', e.target.value)}
-              placeholder="e.g. XYZ123"
-            />
+              placeholder="e.g. XYZ123" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="reason" className="text-sm font-medium text-gray-700">
-              Reason for Visit *
-            </label>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="reason" className="text-sm font-medium text-slate-700">Reason for Visit *</label>
             <textarea
-              id="reason"
-              value={form.reason}
+              id="reason" value={form.reason}
               onChange={(e) => updateField('reason', e.target.value)}
-              rows={3}
-              placeholder="Brief description of your visit..."
-              className={`border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${errors.reason ? 'border-red-400' : ''}`}
+              rows={3} placeholder="Brief description of your visit..."
+              className={`w-full border rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 bg-white resize-none
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors
+                ${errors.reason ? 'border-red-400' : 'border-slate-300 hover:border-slate-400'}`}
             />
             {errors.reason && <p className="text-xs text-red-600">{errors.reason}</p>}
           </div>
+
           <div className="flex justify-end pt-2">
-            <Button onClick={() => validateStep1() && setStep(2)}>Next: Choose Date & Time</Button>
+            <Button onClick={() => validateStep1() && setStep(2)}>
+              Next: Choose Date & Time →
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Step 2: Date & Time */}
+      {/* Step 2 */}
       {step === 2 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Choose Date & Time</h2>
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 mb-0.5">Choose Date & Time</h2>
+            <p className="text-sm text-slate-500">Available Monday – Friday, 9 AM – 4:30 PM.</p>
+          </div>
+
           {submitError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-md px-4 py-3 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
               {submitError}
             </div>
           )}
-          <DateTimePicker
-            value={form.appointment_dt}
-            onChange={(dt) => {
-              updateField('appointment_dt', dt);
-              setSubmitError('');
-            }}
-          />
-          {errors.appointment_dt && (
-            <p className="text-sm text-red-600">{errors.appointment_dt}</p>
-          )}
+
+          <DateTimePicker value={form.appointment_dt} onChange={(dt) => { updateField('appointment_dt', dt); setSubmitError(''); }} />
+
+          {errors.appointment_dt && <p className="text-sm text-red-600">{errors.appointment_dt}</p>}
+
           <div className="flex justify-between pt-2">
-            <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
-            <Button onClick={() => validateStep2() && setStep(3)}>Next: Review</Button>
+            <Button variant="secondary" onClick={() => setStep(1)}>← Back</Button>
+            <Button onClick={() => validateStep2() && setStep(3)}>Next: Review →</Button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Confirm */}
+      {/* Step 3 */}
       {step === 3 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">Confirm Appointment</h2>
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 mb-0.5">Confirm Your Appointment</h2>
+            <p className="text-sm text-slate-500">Please review your details before confirming.</p>
+          </div>
+
           {submitError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-md px-4 py-3 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
               {submitError}
             </div>
           )}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2 text-sm">
-            <div className="grid grid-cols-2 gap-1">
-              <span className="text-gray-500">Patient Type</span>
-              <span className="capitalize">{form.patient_type} Patient</span>
-              <span className="text-gray-500">Name</span>
-              <span>{form.first_name} {form.last_name}</span>
-              <span className="text-gray-500">Phone</span>
-              <span>{form.phone}</span>
-              {form.email && <>
-                <span className="text-gray-500">Email</span>
-                <span>{form.email}</span>
-              </>}
-              {form.insurance_provider && <>
-                <span className="text-gray-500">Insurance</span>
-                <span>{form.insurance_provider}</span>
-              </>}
-              {form.insurance_id && <>
-                <span className="text-gray-500">Insurance ID</span>
-                <span>{form.insurance_id}</span>
-              </>}
-              <span className="text-gray-500">Reason</span>
-              <span>{form.reason}</span>
-            </div>
-            <div className="border-t border-gray-200 pt-2 mt-2">
-              <span className="text-gray-500">Appointment</span>
-              <p className="font-semibold text-blue-700 mt-0.5">{formatDateTime(form.appointment_dt)}</p>
-            </div>
+
+          {/* Appointment time highlight */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+            <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Appointment Time</p>
+            <p className="text-blue-800 font-bold text-lg">{formatDateTime(form.appointment_dt)}</p>
           </div>
+
+          {/* Details */}
+          <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+            {[
+              { label: 'Patient Type', value: `${form.patient_type === 'new' ? 'New' : 'Existing'} Patient` },
+              { label: 'Name', value: `${form.first_name} ${form.last_name}` },
+              { label: 'Phone', value: form.phone },
+              ...(form.email ? [{ label: 'Email', value: form.email }] : []),
+              ...(form.insurance_provider ? [{ label: 'Insurance', value: `${form.insurance_provider}${form.insurance_id ? ` (${form.insurance_id})` : ''}` }] : []),
+              { label: 'Reason', value: form.reason },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex gap-4 px-4 py-3 text-sm">
+                <span className="text-slate-500 w-28 shrink-0">{label}</span>
+                <span className="text-slate-800 font-medium">{value}</span>
+              </div>
+            ))}
+          </div>
+
           <div className="flex justify-between pt-2">
-            <Button variant="secondary" onClick={() => setStep(2)}>Back</Button>
+            <Button variant="secondary" onClick={() => setStep(2)}>← Back</Button>
             <Button onClick={handleSubmit} disabled={submitting}>
-              {submitting ? 'Booking...' : 'Confirm Booking'}
+              {submitting ? 'Confirming…' : 'Confirm Booking'}
             </Button>
           </div>
         </div>
